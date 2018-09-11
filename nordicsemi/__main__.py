@@ -498,6 +498,11 @@ def pkg():
               help='Firmware comment to be used in Zigbee OTA header.',
               required=False,
               type=click.STRING)
+@click.option('--external-app',
+              help='Indicates that the FW upgrade is intended to be passed through '
+                   '(not applied on the receiving device)',
+              type=click.BOOL)
+
 def generate(zipfile,
            debug_mode,
            application,
@@ -513,7 +518,8 @@ def generate(zipfile,
            zigbee,
            zigbee_manufacturer_id,
            zigbee_image_type,
-           zigbee_comment):
+           zigbee_comment,
+           external_app):
     """
     Generate a zip package for distribution to apps that support Nordic DFU OTA.
     The application, bootloader, and SoftDevice files are converted to .bin if supplied as .hex files.
@@ -526,7 +532,7 @@ def generate(zipfile,
 
     * SD only: Supported (SD of same Major Version).
 
-    * APP only: Supported.
+    * APP only: Supported can be external or internal.
 
     * BL + SD: Supported.
 
@@ -628,6 +634,18 @@ def generate(zipfile,
         click.echo("Error: --sd-id required with softdevice and application images.")
         return
 
+    if application is None and external_app is True:
+        click.echo("Error: --external_app requires an application.")
+        return
+
+    if application is not None and softdevice is not None and external_app is True:
+        click.echo("Error: --external_app is only possible for application only DFU packages.")
+        return
+
+    if application is not None and bootloader is not None and external_app is True:
+        click.echo("Error: --external_app is only possible for application only DFU packages.")
+        return
+
     sd_req_list = []
     if sd_req is not None:
         try:
@@ -694,7 +712,8 @@ def generate(zipfile,
                       zigbee,
                       zigbee_manufacturer_id,
                       zigbee_image_type,
-                      zigbee_comment)
+                      zigbee_comment,
+                      external_app)
 
     package.generate_package(zipfile_path)
 

@@ -60,10 +60,11 @@ from nordicsemi.zigbee.ota_file import *
 from .signing import Signing
 
 HexTypeToInitPacketFwTypemap = {
-    HexType.APPLICATION: DFUType.APPLICATION,
-    HexType.BOOTLOADER: DFUType.BOOTLOADER,
-    HexType.SOFTDEVICE: DFUType.SOFTDEVICE,
-    HexType.SD_BL: DFUType.SOFTDEVICE_BOOTLOADER
+    HexType.APPLICATION:            DFUType.APPLICATION,
+    HexType.BOOTLOADER:             DFUType.BOOTLOADER,
+    HexType.SOFTDEVICE:             DFUType.SOFTDEVICE,
+    HexType.SD_BL:                  DFUType.SOFTDEVICE_BOOTLOADER,
+    HexType.EXTERNAL_APPLICATION:   DFUType.EXTERNAL_APPLICATION
 }
 
 
@@ -126,7 +127,8 @@ class Package(object):
                  zigbee_format=False,
                  manufacturer_id=0,
                  image_type=0,
-                 comment=''):
+                 comment='',
+                 external_app=False):
         """
         Constructor that requires values used for generating a Nordic DFU package.
 
@@ -140,6 +142,7 @@ class Package(object):
         :param str bootloader_fw: Path to bootloader firmware file
         :param str softdevice_fw: Path to softdevice firmware file
         :param str key_file: Path to Signing key file (PEM)
+        :param bool external_app: Boolean to state that the application is external type (pass-through)
         :return: None
         """
 
@@ -156,10 +159,17 @@ class Package(object):
         self.firmwares_data = {}
 
         if app_fw:
-            self.__add_firmware_info(firmware_type=HexType.APPLICATION,
-                                     firmware_version=app_version,
-                                     filename=app_fw,
-                                     init_packet_data=init_packet_vars)
+            if external_app is True:
+                self.__add_firmware_info(firmware_type=HexType.APPLICATION,
+                                         firmware_version=app_version,
+                                         filename=app_fw,
+                                         init_packet_data=init_packet_vars)
+
+            else:
+                self.__add_firmware_info(firmware_type=HexType.EXTERNAL_APPLICATION,
+                                         firmware_version=app_version,
+                                         filename=app_fw,
+                                         init_packet_data=init_packet_vars)
 
         if sd_req is not None:
             init_packet_vars[PacketField.REQUIRED_SOFTDEVICES_ARRAY] = sd_req
@@ -215,14 +225,15 @@ class Package(object):
         self.zip_file = filename
         self.zip_dir  = os.path.join(self.work_dir, 'unpacked_zip')
         self.manifest = Package.unpack_package(filename, self.zip_dir)
-        
+
         self.rm_work_dir(preserve_work_dir)
 
     def image_str(self, index, hex_type, img):
-        type_strs = {HexType.SD_BL : "sd_bl", 
-                    HexType.SOFTDEVICE : "softdevice",
-                    HexType.BOOTLOADER : "bootloader",
-                    HexType.APPLICATION : "application" }
+        type_strs = {HexType.SD_BL: "sd_bl",
+                     HexType.SOFTDEVICE: "softdevice",
+                     HexType.BOOTLOADER: "bootloader",
+                     HexType.APPLICATION: "application",
+                     HexType.EXTERNAL_APPLICATION: "external application"}
 
         # parse init packet
         with open(os.path.join(self.zip_dir, img.dat_file), "rb") as imgf:
@@ -291,7 +302,7 @@ class Package(object):
         return s
 
     def __str__(self):
-        
+
         imgs = ""
         i = 0
         if self.manifest.softdevice_bootloader:
@@ -371,7 +382,7 @@ DFU Package: <{0}>:
             sd_size = 0
             bl_size = 0
             app_size = 0
-            if key == HexType.APPLICATION:
+            if key == HexType.APPLICATION or key == HexType.EXTERNAL_APPLICATION:
                 app_size = bin_length
             elif key == HexType.SOFTDEVICE:
                 sd_size = bin_length
@@ -517,7 +528,7 @@ DFU Package: <{0}>:
         if firmware_type == HexType.SD_BL:
             self.firmwares_data[firmware_type][FirmwareKeys.SD_SIZE] = sd_size
             self.firmwares_data[firmware_type][FirmwareKeys.BL_SIZE] = bl_size
-        
+
         if firmware_version is not None:
             self.firmwares_data[firmware_type][FirmwareKeys.INIT_PACKET_DATA][PacketField.FW_VERSION] = firmware_version
 
