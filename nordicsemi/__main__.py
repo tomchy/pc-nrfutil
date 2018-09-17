@@ -701,6 +701,13 @@ def generate(zipfile,
     if zigbee_image_type is None:
         zigbee_image_type = 0xFFFF
 
+    # Set the external_app to false if --zigbee is set
+    inner_external_app = external_app
+    if zigbee:
+        inner_external_app = False
+
+    # Generate a DFU package. If --zigbee is set this is the inner DFU package
+    # which will be used as a binary input to the outter DFU package
     package = Package(debug_mode,
                       hw_version,
                       application_version_internal,
@@ -715,20 +722,23 @@ def generate(zipfile,
                       zigbee_manufacturer_id,
                       zigbee_image_type,
                       zigbee_comment,
-                      external_app)
+                      inner_external_app)
 
     package.generate_package(zipfile_path)
 
-    # Regenerate BLE DFU package for Zigbee DFU purposes.
     if zigbee:
+
         from shutil import copyfile
         from os import remove
 
         log_message = "Zigbee update created at {0}".format(package.zigbee_ota_file.filename)
         click.echo(log_message)
 
+        # Taking the inner Zigbee package as input for the outer DFU package
         binfile = package.zigbee_ota_file.filename.replace(".zigbee", ".bin")
         copyfile(package.zigbee_ota_file.filename, binfile)
+
+        # Create the outer Zigbee DFU package.
         package = Package(debug_mode,
                           hw_version,
                           application_version_internal,
@@ -736,9 +746,10 @@ def generate(zipfile,
                           sd_req_list,
                           sd_id_list,
                           binfile,
-                          bootloader,
-                          softdevice,
-                          key_file)
+                          None,
+                          None,
+                          key_file,
+                          True)
 
         package.generate_package(zipfile_path)
         remove(binfile)
