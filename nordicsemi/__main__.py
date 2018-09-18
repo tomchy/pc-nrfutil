@@ -481,6 +481,10 @@ def pkg():
               help='The private (signing) key in PEM fomat.',
               required=False,
               type=click.Path(exists=True, resolve_path=True, file_okay=True, dir_okay=False))
+@click.option('--external-app',
+              help='Indicates that the FW upgrade is intended to be passed through '
+                   '(not applied on the receiving device)',
+              type=click.BOOL, is_flag=True, default=False)
 @click.option('--zigbee',
               help='Create an image and distribution package for Zigbee DFU server.',
               required=False,
@@ -497,10 +501,6 @@ def pkg():
               help='Firmware comment to be used in Zigbee OTA header.',
               required=False,
               type=click.STRING)
-@click.option('--external-app',
-              help='Indicates that the FW upgrade is intended to be passed through '
-                   '(not applied on the receiving device)',
-              type=click.BOOL, is_flag=True, default=False)
 @click.option('--zigbee-ota-hw-version',
               help='The zigbee OTA hw version.',
               required=False,
@@ -522,11 +522,11 @@ def generate(zipfile,
            sd_id,
            softdevice,
            key_file,
+           external_app,
            zigbee,
            zigbee_manufacturer_id,
            zigbee_image_type,
            zigbee_comment,
-           external_app,
            zigbee_ota_hw_version,
            zigbee_ota_fw_version):
     """
@@ -747,11 +747,11 @@ def generate(zipfile,
                       bootloader,
                       softdevice,
                       key_file,
+                      inner_external_app,
                       zigbee,
                       zigbee_manufacturer_id,
                       zigbee_image_type,
-                      zigbee_comment,
-                      inner_external_app)
+                      zigbee_comment)
 
     package.generate_package(zipfile_path)
 
