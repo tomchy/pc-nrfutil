@@ -34,7 +34,7 @@ that you are using you will need to select a release of this tool compatible wit
 * Versions 1.5.0 and later generate modern firmware packages compatible with **nRF SDK 12.0 and newer**
 * Versions 4.0.0 and later generate modern firmware packages compatible with **nRF SDK 15.1 and newer**
 
-**Note**: In order to generate firmware images, compatible with **nRF SDK 12.0 and newer**, use `--no-backup` switch during generation of DFU settings.
+**Note**: In order to generate firmware images, compatible with **nRF SDK 12.0 to nRF SDK 15.0**, use `--no-backup` switch during generation of DFU settings.
 
 ## Installing from PyPI
 
