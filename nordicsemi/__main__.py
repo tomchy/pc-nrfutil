@@ -520,6 +520,10 @@ def pkg():
               help='Firmware comment to be used in Zigbee OTA header.',
               required=False,
               type=click.STRING)
+@click.option('--zigbee-ota-hw-version',
+              help='The zigbee OTA server hw version.',
+              required=False,
+              type=BASED_INT_OR_NONE)
 def generate(zipfile,
            debug_mode,
            application,
@@ -535,7 +539,8 @@ def generate(zipfile,
            zigbee,
            zigbee_manufacturer_id,
            zigbee_image_type,
-           zigbee_comment):
+           zigbee_comment,
+           zigbee_ota_hw_version):
     """
     Generate a zip package for distribution to apps that support Nordic DFU OTA.
     The application, bootloader, and SoftDevice files are converted to .bin if supplied as .hex files.
@@ -584,6 +589,9 @@ def generate(zipfile,
 
     if hw_version == 'none':
         hw_version = None
+
+    if zigbee_ota_hw_version == 'none':
+        zigbee_ota_hw_version = None
 
     # Convert multiple value into a single instance
     if len(sd_req) > 1:
@@ -648,6 +656,10 @@ def generate(zipfile,
 
     if application is not None and softdevice is not None and sd_id is None:
         click.echo("Error: --sd-id required with softdevice and application images.")
+        return
+
+    if zigbee and zigbee_ota_hw_version is None:
+        click.echo("Error: --zigbee-ota-hw-version is required.")
         return
 
     sd_req_list = []
@@ -731,7 +743,7 @@ def generate(zipfile,
         binfile = package.zigbee_ota_file.filename.replace(".zigbee", ".bin")
         copyfile(package.zigbee_ota_file.filename, binfile)
         package = Package(debug_mode,
-                          hw_version,
+                          zigbee_ota_hw_version,
                           application_version_internal,
                           bootloader_version,
                           sd_req_list,
