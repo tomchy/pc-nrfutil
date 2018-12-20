@@ -1117,7 +1117,17 @@ def zigbee(file, jlink_snr, channel):
     """
     ble_driver_init('NRF52')
     from nordicsemi.zigbee.ota_flasher import OTAFlasher
-    of = OTAFlasher(fw = file, channel = channel, snr = jlink_snr)
+
+    if jlink_snr is None:
+        click.echo("Please specify serial port or Jlink serial number.")
+        return 1
+
+    port = get_port_by_snr(jlink_snr)
+    if port is None:
+        click.echo("No Segger USB CDC ports found, please connect your board.")
+        return 2
+
+    of = OTAFlasher(fw = file, channel = channel, serial_port = port, snr = jlink_snr)
 
     if of.fw_check():
         click.echo("Board already flashed with connectivity firmware.")
